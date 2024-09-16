@@ -8,6 +8,15 @@ const char *msgs[] = {"0. Quit",
 
 const int NMsgs = sizeof(msgs) / sizeof(msgs[0]);
 
+const char *err_msgs[] = {"Ok",
+                          "Array name length is zero",
+                          "Value name length is zero",
+                          "The string is not XML-like string",
+                          "The string does not start with <arr_name> or it does not end with </arr_name>",
+                          "Not found closing value name tag",
+                          "Value is not a correct number",
+                          "The next XML-string's tag us not </arr_name>"};
+
 int (*dialog_options[])() = {NULL,
                              dialog_arr2xml,
                              dialog_xml2arr};
@@ -46,6 +55,14 @@ int dialog_xml2arr() {
         return 0;  // Error happened while reading an XML-string
     }
 
+    int validate_xml_result = validate_xml_format(xml);
+    if (validate_xml_result != 0) {
+        printf("Error while validating your XML-string: %s\n", err_msgs[validate_xml_result]);
+        puts("Try again!");
+        free_memory_in_dialog_xml2arr(xml, NULL);
+        return 1;  // Ok
+    }
+
     IntegerArray *xml2arr_result = xml_to_array(xml);
     if (xml2arr_result == NULL) {
         free_memory_in_dialog_xml2arr(xml, xml2arr_result);
@@ -54,13 +71,13 @@ int dialog_xml2arr() {
 
     puts("The result:");
     if (!xml2arr_result->len) {
-        puts("empty array\n");
+        puts("empty array");
     } else {
         for (int i = 0; i < xml2arr_result->len; i++) {
             if (i < xml2arr_result->len - 1) {
                 printf("%d, ", xml2arr_result->arr[i]);
             } else {
-                printf("%d\n\n", xml2arr_result->arr[i]);
+                printf("%d\n", xml2arr_result->arr[i]);
             }
         }
     }
@@ -98,7 +115,7 @@ int dialog_arr2xml() {
     }
 
     puts("The result:");
-    printf("%s\n\n", arr2xml_result);
+    printf("%s\n", arr2xml_result);
 
     free_memory_in_dialog_arr2xml(arr_ptr, arr_name, elem_tag_name, arr2xml_result);
 
@@ -214,6 +231,7 @@ IntegerArray *str_to_arr() {
                 digits_amount = 0;
             }
         } else {
+            puts("You have entered an incorrect array!");
             free_memory_in_str2arr(arr_ptr, cur_num_as_str);
             return NULL;
         }
