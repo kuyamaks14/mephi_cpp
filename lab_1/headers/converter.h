@@ -30,7 +30,8 @@ IntegerArray *xml_to_array(const char *xml);
 
 /////////////////////////////////////
 
-void erase_xml(char *xml);
+void free_string_memory(char *str);
+void free_array_memory(IntegerArray *arr_ptr);
 void free_memory_in_xml2arr(IntegerArray *arr_ptr, char *num_as_str);
 void free_memory_in_str2arr(IntegerArray *arr_ptr, char *cur_num_as_str);
 void free_memory_in_dialog_xml2arr(char *xml, IntegerArray *arr_ptr_result);
