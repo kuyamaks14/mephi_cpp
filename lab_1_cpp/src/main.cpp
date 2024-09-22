@@ -1,12 +1,14 @@
-#include <stdio.h>
+#include <iostream>
 #include "../headers/dialog.h"
 
 int main() {
-    int operation_code;
+    try {
+        int operation_code;
+        while ((operation_code = dialog(msgs)))
+            dialog_options[operation_code]();
+    } catch (const std::exception &e) {
+        std::cout << "Error happened: " << e.what() << std::endl;
+    }
 
-    while ((operation_code = dialog(msgs, NMsgs)))
-        if (!dialog_options[operation_code]())
-            break;
-
-    puts("\nThat's all.");
+    std::cout << "\nThat's all" << std::endl;
 }

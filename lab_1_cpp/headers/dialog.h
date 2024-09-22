@@ -1,30 +1,41 @@
 #ifndef LAB_1_DIALOG_H
 #define LAB_1_DIALOG_H
 
-#include "converter.h"
-
-extern const int NMsgs;
-extern const char *msgs[];
-extern const char *err_msgs[];
-extern int (*dialog_options[])();
+#include <array>
+#include <string>
+#include <vector>
 
 /////////////////////////////////////
 
-//        DIALOG FUNCTIONS
-
-/////////////////////////////////////
-int dialog(const char *msgs[], int NMsgs);
-int dialog_xml2arr();
-int dialog_arr2xml();
-
+////   EXTERNAL VARIABLES
 
 /////////////////////////////////////
 
-//         AUXILIARY TOOLS
+extern std::array<void(*)(), 3> dialog_options;
+extern std::array<std::string, 3> msgs;
 
 /////////////////////////////////////
-int get_int(int *num);
-char *get_str();
-IntegerArray *str_to_arr();
+
+////       DIALOG FUNCTIONS
+
+/////////////////////////////////////
+
+int dialog(const std::array<std::string, msgs.size()> &messages);
+void dialog_xml2arr();
+void dialog_arr2xml();
+
+/////////////////////////////////////
+
+////         AUXILIARY TOOLS
+
+/////////////////////////////////////
+
+void get_int(int &num);
+std::string get_str(bool do_trim = false);
+
+std::string trim(const std::string &str);
+std::vector<int> str_to_arr(const std::string &str);
+
+void print_array(const std::vector<int> &arr);
 
 #endif //LAB_1_DIALOG_H

@@ -1,243 +1,154 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "../headers/dialog.h"
+#include "../headers/converter.h"
+#include <iostream>
+#include <sstream>
 
-const char *msgs[] = {"0. Quit",
-                      "1. Integer array to XML string",
-                      "2. XML string to integer array"};
+std::array<std::string, 3> msgs = {"0. Quit",
+                                   "1. Integer array to XML string",
+                                   "2. XML string to integer array"};
 
-const int NMsgs = sizeof(msgs) / sizeof(msgs[0]);
-
-const char *err_msgs[] = {"Ok",
-                          "Array name length is zero",
-                          "Value name length is zero",
-                          "The string is not XML-like string",
-                          "The string does not start with <arr_name> or it does not end with </arr_name>",
-                          "Not found closing value name tag",
-                          "Value is not a correct number",
-                          "The next XML-string's tag us not </arr_name>"};
-
-int (*dialog_options[])() = {NULL,
-                             dialog_arr2xml,
-                             dialog_xml2arr};
+std::array<void(*)(), 3> dialog_options = {nullptr,
+                                           dialog_arr2xml,
+                                           dialog_xml2arr};
 
 /////////////////////////////////////
 
-//        DIALOG FUNCTIONS
+////      DIALOG FUNCTIONS
 
 /////////////////////////////////////
 
-int dialog(const char *msgs[], int NMsgs) {
-    const char *err_msg = "";
-
+int dialog(const std::array<std::string, msgs.size()> &messages) {
+    std::string err_msg;
     int option_num;
-    int i, n;
     do {
-        puts(err_msg);
+        std::cout << err_msg << std::endl;
         err_msg = "You are wrong. Repeate, please!";
 
-        for (i = 0; i < NMsgs; i++)
-            puts(msgs[i]);
-        puts("Make your choice: --> ");
+        for (const std::string &message : messages)
+            std::cout << message << std::endl;
 
-        n = get_int(&option_num);
-
-        if (n == 0) // EOF -> quit from program
-            option_num = 0;
-    } while (option_num < 0 || option_num >= NMsgs);
+        std::cout << "Make your choice: --> " << std::endl;
+        get_int(option_num);
+    } while (option_num < 0 || option_num >= messages.size());
     return option_num;
 }
 
-int dialog_xml2arr() {
-    puts("Enter XML string:");
-    char *xml = get_str();
-    if (xml == NULL) {
-        return 0;  // Error happened while reading an XML-string
+void dialog_xml2arr() {
+    std::cout << "Enter XML string:" << std::endl;
+    std::string xml = get_str();
+
+    try {
+        validate_xml_format(xml);
+        std::vector<int> arr = xml_to_array(xml);
+
+        std::cout << "The result:" << std::endl;
+        print_array(arr);
+    } catch (const std::logic_error &e) {
+        std::cout << "Error happened: " << e.what() << std::endl;
     }
-
-    int validate_xml_result = validate_xml_format(xml);
-    if (validate_xml_result != 0) {
-        printf("Error while validating your XML-string: %s\n", err_msgs[validate_xml_result]);
-        puts("Try again!");
-        free_memory_in_dialog_xml2arr(xml, NULL);
-        return 1;  // Ok
-    }
-
-    IntegerArray *xml2arr_result = xml_to_array(xml);
-    if (xml2arr_result == NULL) {
-        free_memory_in_dialog_xml2arr(xml, xml2arr_result);
-        return 0;  // Error happened while converting XML-string to array
-    }
-
-    puts("The result:");
-    if (!xml2arr_result->len) {
-        puts("empty array");
-    } else {
-        for (int i = 0; i < xml2arr_result->len; i++) {
-            if (i < xml2arr_result->len - 1) {
-                printf("%d, ", xml2arr_result->arr[i]);
-            } else {
-                printf("%d\n", xml2arr_result->arr[i]);
-            }
-        }
-    }
-
-    free_memory_in_dialog_xml2arr(xml, xml2arr_result);
-
-    return 1; // Ok
 }
 
-int dialog_arr2xml() {
+void dialog_arr2xml() {
     puts("Enter an integer array (e.g., \"1 2 3\"):");
-    IntegerArray *arr_ptr = str_to_arr();
-    if (arr_ptr == NULL) {
-        return 0;  // Error happened while executing str_to_arr()
+    std::string arr_as_str = get_str(true);
+
+    try {
+        std::vector<int> arr = str_to_arr(arr_as_str);
+
+        std::cout << "Enter the array's name:" << std::endl;
+        std::string arr_name = get_str();
+
+        std::cout << "Enter an element tag name:" << std::endl;
+        std::string elem_tag_name = get_str();
+
+        std::string xml = array_to_xml(arr, arr_name, elem_tag_name);
+
+        std::cout << "The result:\n" << xml << std::endl;
+
+    } catch (const std::logic_error &e) {
+        std::cout << "Error happened: " << e.what() << std::endl;
     }
-
-    puts("Enter the array's name:");
-    char *arr_name = get_str();
-    if (arr_name == NULL) {
-        free_memory_in_dialog_arr2xml(arr_ptr, arr_name, NULL, NULL);
-        return 0;  // Error happened while reading a string
-    }
-
-    puts("Enter an element tag name:");
-    char *elem_tag_name = get_str();
-    if (elem_tag_name == NULL) {
-        free_memory_in_dialog_arr2xml(arr_ptr, arr_name, elem_tag_name, NULL);
-        return 0;  // Error happened while reading a string
-    }
-
-    char *arr2xml_result = array_to_xml(arr_ptr, arr_name, elem_tag_name);
-    if (arr2xml_result == NULL) {
-        free_memory_in_dialog_arr2xml(arr_ptr, arr_name, elem_tag_name, arr2xml_result);
-        return 0;  // Error while memory allocating in array_to_xml()
-    }
-
-    puts("The result:");
-    printf("%s\n", arr2xml_result);
-
-    free_memory_in_dialog_arr2xml(arr_ptr, arr_name, elem_tag_name, arr2xml_result);
-
-    return 1;  // Ok
 }
 
-/////////////////////////////////////
+///////////////////////////////////
 
-//         AUXILIARY TOOLS
+////       AUXILIARY TOOLS
 
-/////////////////////////////////////
+///////////////////////////////////
 
-int get_int(int *num) {
-    int scanf_result;
-    do {
-        scanf_result = scanf("%d", num);
-
-        if (scanf_result == -1) {
-            return 0;
-        }
-
-        if (scanf_result == 0) {
-            scanf("%*[^\n]");
-            printf("%s", "Try once again!: ");
-            scanf_result = 0;
-        }
-    } while (scanf_result == 0);
-
-    scanf("%*[^\n]");
-    getchar();
-    return 1;
+void get_int(int &num) {
+    while (!(std::cin >> num)) {
+        if (std::cin.eof())
+            throw std::runtime_error("EOF");
+        if (std::cin.bad())
+            throw std::runtime_error("Broken input");
+        std::cin.clear();
+        std::cin.ignore(
+                std::numeric_limits<std::streamsize>::max(),
+                '\n');
+        std::cout << "Invalid input. Try again: ";
+    }
 }
 
-char *get_str() {
-    char *str = (char *) calloc(1, sizeof(char));
-    *str = '\0';
-    int str_size = sizeof(char);
+std::string get_str(bool do_trim) {
+    std::string str;
+    while (str.empty()) {
+        std::getline(std::cin, str);
 
-    char character;
-    for (int i = 0; ; i++) {
-        character = (char) getchar();
+        if (do_trim)
+            str = trim(str);
 
-        if (character == EOF) {
-            free(str);
-            return NULL;
-        } else if (character == '\n') {
-            if (i > 0) {
-                break;
-            } else {
-                i--;
-            }
-        } else {
-            char *str2 = (char *) realloc(str, str_size + sizeof(char));
-            str_size += sizeof(char);
-
-            if (str2 == NULL) {
-                free(str);
-                return NULL;
-            }
-            str = str2;
-
-            str[i] = (char) character;
-            str[i + 1] = '\0';
+        if (std::cin.eof())
+            throw std::runtime_error("EOF");
+        if (std::cin.bad())
+            throw std::runtime_error("Broken input");
+        if (std::cin.fail()) {
+            std::cin.clear();
+            std::cin.ignore(
+            std::numeric_limits<std::streamsize>::max(),
+            '\n');
         }
     }
 
     return str;
 }
 
-IntegerArray *str_to_arr() {
-    IntegerArray *arr_ptr = (IntegerArray *) calloc(1, sizeof(IntegerArray));
-    init_integer_array(arr_ptr);
+std::vector<int> str_to_arr(const std::string &str) {
+    std::vector<int> arr;
+    std::istringstream ss(str);
+    int num;
 
-    char *cur_num_as_str = (char *) calloc(1, sizeof(char));
-    int cur_num_len = 0;
-    int digits_amount = 0;
-
-    char cur_char;
-    char prev_char = '\0';
-
-    while (prev_char != '\n') {
-        cur_char = getchar();
-        if (cur_char >= 48 && cur_char <= 57 || (cur_char == '-' && prev_char != '-')) {
-            char *tmp_cur_num = (char *) realloc(cur_num_as_str, (cur_num_len + 1) * sizeof(char));
-            if (tmp_cur_num == NULL) {
-                free_memory_in_str2arr(arr_ptr, cur_num_as_str);
-                return NULL;
-            }
-
-            cur_num_as_str = tmp_cur_num;
-            cur_num_as_str[cur_num_len] = cur_char;
-            cur_num_len++;
-            if (cur_char != '-') {
-                digits_amount++;
-            }
-        } else if (cur_char == ' ' || cur_char == '\n') {
-            if (digits_amount) {
-                int number = atoi(cur_num_as_str);
-                int *tmp_arr_ptr = (int *) realloc(arr_ptr->arr, (arr_ptr->len + 1) * sizeof(int));
-                if (tmp_arr_ptr == NULL) {
-                    free_memory_in_str2arr(arr_ptr, cur_num_as_str);
-                    return NULL;
-                }
-
-                arr_ptr->arr = tmp_arr_ptr;
-                arr_ptr->arr[arr_ptr->len] = number;
-                arr_ptr->len++;
-                tmp_arr_ptr = NULL;
-
-                free(cur_num_as_str);
-                cur_num_as_str = NULL;
-                cur_num_len = 0;
-                digits_amount = 0;
-            }
-        } else {
-            puts("You have entered an incorrect array!");
-            free_memory_in_str2arr(arr_ptr, cur_num_as_str);
-            return NULL;
-        }
-
-        prev_char = cur_char;
+    while (ss >> num) {  // EOF in the end
+        arr.push_back(num);
     }
 
-    return arr_ptr;
+    if (ss.bad())
+        throw std::runtime_error("Broken input");
+    if (ss.fail() && !ss.eof()) {
+        throw std::logic_error("Incorrect array");
+    }
+
+    return arr;
+}
+
+std::string trim(const std::string &str) {
+    auto first = str.find_first_not_of(" \t");
+    auto last = str.find_last_not_of(" \t");
+
+    if (first == std::string::npos)
+        return "";
+    return str.substr(first, last - first + 1);
+}
+
+void print_array(const std::vector<int> &arr) {
+    if (arr.empty()) {
+        std::cout << "Empty array";
+    } else {
+        for (size_t i = 0; i < arr.size(); i++) {
+            std::cout << arr[i];
+            if (i < arr.size() - 1)
+                std::cout << ", ";
+        }
+    }
+    std::cout << std::endl;
 }
