@@ -3,7 +3,7 @@
 
 extern const char *msgs[];
 extern const int NMsgs;
-int (*dialog_options[])();
+extern int (*dialog_options[])();
 
 int main() {
     int operation_code;
