@@ -11,8 +11,8 @@
 
 /////////////////////////////////////
 
-extern std::array<void(*)(), 3> dialog_options;
-extern std::array<std::string, 3> msgs;
+extern std::array<void(*)(), 5> dialog_options;
+extern std::array<std::string, 5> msgs;
 
 /////////////////////////////////////
 
@@ -21,8 +21,12 @@ extern std::array<std::string, 3> msgs;
 /////////////////////////////////////
 
 int dialog(const std::array<std::string, msgs.size()> &messages);
-void dialog_xml2arr();
-void dialog_arr2xml();
+
+void dialog_xml2arr_cpp();
+void dialog_xml2arr_c();
+
+void dialog_arr2xml_cpp();
+void dialog_arr2xml_c();
 
 /////////////////////////////////////
 
@@ -31,10 +35,13 @@ void dialog_arr2xml();
 /////////////////////////////////////
 
 void get_int(int &num);
+
 std::string get_str(bool do_trim = false);
 
 std::string trim(const std::string &str);
+
 std::vector<int> str_to_arr(const std::string &str);
+std::vector<int> str_to_arr(const char *str);
 
 void print_array(const std::vector<int> &arr);
 
