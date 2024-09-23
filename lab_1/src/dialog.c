@@ -192,14 +192,16 @@ IntegerArray *str_to_arr() {
     char *cur_num_as_str = (char *) calloc(1, sizeof(char));
     int cur_num_len = 0;
     int digits_amount = 0;
-    
+
+    char *tmp_cur_num = NULL;
+
     char cur_char;
     char prev_char = '\0';
 
     while (prev_char != '\n') {
         cur_char = getchar();
         if (cur_char >= 48 && cur_char <= 57 || (cur_char == '-' && prev_char != '-')) {
-            char *tmp_cur_num = (char *) realloc(cur_num_as_str, (cur_num_len + 1) * sizeof(char));
+            tmp_cur_num = (char *) realloc(cur_num_as_str, (cur_num_len + 1) * sizeof(char));
             if (tmp_cur_num == NULL) {
                 free_memory_in_str2arr(arr_ptr, cur_num_as_str);
                 return NULL;
@@ -208,6 +210,7 @@ IntegerArray *str_to_arr() {
             cur_num_as_str = tmp_cur_num;
             cur_num_as_str[cur_num_len] = cur_char;
             cur_num_len++;
+            tmp_cur_num = NULL;
             if (cur_char != '-') {
                 digits_amount++;
             }
@@ -238,6 +241,12 @@ IntegerArray *str_to_arr() {
 
         prev_char = cur_char;
     }
+
+    if (cur_num_as_str != NULL)
+        free(cur_num_as_str);
+
+    if (tmp_cur_num != NULL)
+        free(tmp_cur_num);
 
     return arr_ptr;
 }
